@@ -1,11 +1,11 @@
 const WebSocket = require('ws')
 
-class DeribitWS {
+class OkxWS {
   symbols
   datasource
 
   constructor(_datasource) {
-    this.optionsWsURL = 'wss://www.deribit.com/ws/api/v2'
+    this.WsURL = 'wss://ws.okx.com:8443/ws/v5/public'
     this.datasource = _datasource
   }
 
@@ -16,7 +16,7 @@ class DeribitWS {
   streamOrderbook(symbols) {
     this._setSymbols(symbols)
 
-    this.ws = new WebSocket(this.optionsWsURL)
+    this.ws = new WebSocket(this.WsURL)
 
     this.ws.on('open', this.onOpen.bind(this))
     this.ws.on('message', this.onMessage.bind(this))
@@ -25,15 +25,18 @@ class DeribitWS {
   }
 
   onOpen() {
-    const channels = this.symbols.map((s) => `book.${s}.none.10.100ms`)
+    const args = []
+    for (const s of this.symbols) {
+      args.push({
+        channel: 'books5',
+        instId: s,
+      })
+    }
+
     this.ws.send(
       JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'public/subscribe',
-        params: {
-          channels: channels,
-        },
+        op: 'subscribe',
+        args,
       }),
     )
   }
@@ -43,12 +46,12 @@ class DeribitWS {
   }
 
   onClose() {
-    console.log('DeribitWS connection closed')
+    console.log('OkxWS connection closed')
   }
 
   onError(error) {
-    console.log('DeribitWS closed with error: ', error)
+    console.log('OkxWS closed with error: ', error)
   }
 }
 
-exports.default = DeribitWS
+exports.default = OkxWS

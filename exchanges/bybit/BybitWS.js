@@ -1,11 +1,11 @@
 const WebSocket = require('ws')
 
-class DeribitWS {
+class BybitWS {
   symbols
   datasource
 
   constructor(_datasource) {
-    this.optionsWsURL = 'wss://www.deribit.com/ws/api/v2'
+    this.optionsWsURL = 'wss://stream.bybit.com/v5/public/option'
     this.datasource = _datasource
   }
 
@@ -25,15 +25,11 @@ class DeribitWS {
   }
 
   onOpen() {
-    const channels = this.symbols.map((s) => `book.${s}.none.10.100ms`)
+    const args = this.symbols.map((s) => `orderbook.25.${s}`)
     this.ws.send(
       JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'public/subscribe',
-        params: {
-          channels: channels,
-        },
+        op: 'subscribe',
+        args,
       }),
     )
   }
@@ -43,12 +39,12 @@ class DeribitWS {
   }
 
   onClose() {
-    console.log('DeribitWS connection closed')
+    console.log('BybitWS connection closed')
   }
 
   onError(error) {
-    console.log('DeribitWS closed with error: ', error)
+    console.log('BybitWS closed with error: ', error)
   }
 }
 
-exports.default = DeribitWS
+exports.default = BybitWS
