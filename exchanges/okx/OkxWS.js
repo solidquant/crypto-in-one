@@ -2,11 +2,11 @@ const WebSocket = require('ws')
 
 class OkxWS {
   symbols
-  queue
+  datasource
 
-  constructor(_queue) {
+  constructor(_datasource) {
     this.WsURL = 'wss://ws.okx.com:8443/ws/v5/public'
-    this.queue = _queue
+    this.datasource = _datasource
   }
 
   _setSymbols(symbols) {
@@ -42,7 +42,7 @@ class OkxWS {
   }
 
   onMessage(message) {
-    this.queue.enqueue(message.toString())
+    this.datasource.emit('data', message)
   }
 
   onClose() {

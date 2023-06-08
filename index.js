@@ -2,32 +2,38 @@ const DeribitWS = require('./exchanges/deribit/DeribitWS').default
 const DeribitAPI = require('./exchanges/deribit/DeribitAPI').default
 const OkxAPI = require('./exchanges/okx/OkxAPI').default
 const OkxWS = require('./exchanges/okx/OkxWS').default
+const BybitAPI = require('./exchanges/bybit/BybitAPI').default
 
-const Queue = require('./utils/Queue').default
+const DataSource = require('./utils/DataSource').default
 
 ;(async () => {
-  const api = new OkxAPI()
-  const symbols = await api.getSymbols()
-  console.log(symbols)
+  const datasource = new DataSource()
+  datasource.on('data', (data) => {
+    console.log('From index.js: ', data.toString())
+  })
 
-  const btcSymbols = symbols.filter((s) => s.includes('BTC'))
+  const deribitAPI = new DeribitAPI()
 
-  const q = new Queue()
+  const deribitBtcWS1 = new DeribitWS(datasource)
+  const deribitBtcWS2 = new DeribitWS(datasource)
+  const deribitEthWS1 = new DeribitWS(datasource)
+  const deribitEthWS2 = new DeribitWS(datasource)
 
-  const ws = new OkxWS(q)
-  ws.streamOrderbook(btcSymbols)
+  const deribitSymbols = await deribitAPI.getSymbols()
+  const deribitBtcSymbols = deribitSymbols.filter((s) => s.includes('BTC'))
+  const deribitEthSymbols = deribitSymbols.filter((s) => s.includes('ETH'))
 
-  const processData = () => {
-    const item = q.dequeue()
+  deribitBtcWS1.streamOrderbook(
+    deribitBtcSymbols.slice(0, deribitBtcSymbols.length / 2),
+  )
+  deribitBtcWS2.streamOrderbook(
+    deribitBtcSymbols.slice(deribitBtcSymbols.length / 2),
+  )
 
-    if (item) {
-      const data = JSON.parse(item)
-      console.log(data)
-      processData()
-    } else {
-      setTimeout(processData, 10)
-    }
-  }
-
-  processData()
+  deribitEthWS1.streamOrderbook(
+    deribitEthSymbols.slice(0, deribitEthSymbols.length / 2),
+  )
+  deribitEthWS2.streamOrderbook(
+    deribitEthSymbols.slice(deribitEthSymbols.length / 2),
+  )
 })()
