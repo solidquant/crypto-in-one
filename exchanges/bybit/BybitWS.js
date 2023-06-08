@@ -1,12 +1,16 @@
 const WebSocket = require('ws')
 
+const { Exchange } = require('../../interfaces/models').default
+
 class BybitWS {
   symbols
   datasource
+  pingInterval
 
   constructor(_datasource) {
     this.optionsWsURL = 'wss://stream.bybit.com/v5/public/option'
     this.datasource = _datasource
+    this.pingInterval = null
   }
 
   _setSymbols(symbols) {
@@ -32,18 +36,24 @@ class BybitWS {
         args,
       }),
     )
+
+    this.pingInterval = setInterval(() => {
+      this.ws.send(JSON.stringify({ op: 'ping' }))
+    }, 10000)
   }
 
   onMessage(message) {
-    this.datasource.emit('data', message)
+    this.datasource.emit('data', Exchange.Bybit, message)
   }
 
   onClose() {
     console.log('BybitWS connection closed')
+    clearInterval(this.pingInterval)
   }
 
   onError(error) {
     console.log('BybitWS closed with error: ', error)
+    clearInterval(this.pingInterval)
   }
 }
 
